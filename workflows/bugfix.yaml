@@ -1,0 +1,20 @@
+title: 缺陷修复
+stages:
+  - id: reproduce
+    role: planner
+    skill: requirements
+    deliverable: 给出触发条件、实际与预期行为、受影响范围和可在修复后重复的检查。
+  - id: fix
+    role: developer
+    skill: coding
+    deliverable: 记录根因、最小修复及同一条件下的修复前后结果。
+  - id: review
+    role: reviewer
+    skill: code-review
+    deliverable: 检查其他调用方及相邻路径，记录回归风险和需要返工的具体位置。
+    on_fail: fix
+  - id: verify
+    role: verifier
+    skill: verification
+    deliverable: 重跑复现步骤和受影响检查，注明环境、实际结果及剩余限制。
+    on_fail: fix

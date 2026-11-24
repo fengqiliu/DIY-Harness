@@ -1,0 +1,8 @@
+# 模型别名供执行者或宿主选择，可替换为自己宿主中可用的模型标识。
+profiles:
+  session-default: 沿用当前会话选择的模型
+roles:
+  planner: session-default
+  developer: session-default
+  reviewer: session-default
+  verifier: session-default

@@ -1,0 +1,24 @@
+title: 功能开发
+stages:
+  - id: requirements
+    role: planner
+    skill: requirements
+    deliverable: 写清目标角色、业务场景和可观察的验收条件，标明影响范围及关键假设。
+  - id: design
+    role: planner
+    skill: system-design
+    deliverable: 说明入口、数据或接口变化、失败处理，以及可验证这些选择的位置。
+  - id: implement
+    role: developer
+    skill: coding
+    deliverable: 提交本地改动的文件或差异引用，记录已运行检查及其结果。
+  - id: review
+    role: reviewer
+    skill: code-review
+    deliverable: 对照验收条件审查行为兼容性和失败路径，给出阻断问题的位置与影响。
+    on_fail: implement
+  - id: verify
+    role: verifier
+    skill: verification
+    deliverable: 将验收条件逐项对应到实测结果，注明未覆盖的环境和场景。
+    on_fail: implement
