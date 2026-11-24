@@ -1,0 +1,30 @@
+title: PACS 敏捷交付
+stages:
+  - id: discovery
+    role: product-manager
+    skill: requirements
+    deliverable: 交付一条按临床用户价值切分的故事，标明所属限界上下文、领域术语及可观察的验收场景。
+  - id: planning
+    role: project-manager
+    skill: requirements
+    deliverable: 记录迭代目标、交付切片、优先级、上下游依赖与完成定义，在工作项中确认迭代归属。
+    on_fail: discovery
+  - id: design
+    role: ux-designer
+    skill: system-design
+    deliverable: 交接任务流和界面稿，标出可执行操作、领域状态变化、失败反馈及键盘路径。
+    on_fail: planning
+  - id: implement
+    role: pacs-developer
+    skill: coding
+    deliverable: 关联代码差异、领域规则及接口契约，附正常、异常和重复输入的实测证据。
+  - id: verify
+    role: test-engineer
+    skill: verification
+    deliverable: 将验收条件对应到合成样例、实测版本及结果，附可复现缺陷或可交付范围。
+    on_fail: implement
+  - id: release
+    role: ops-engineer
+    skill: verification
+    deliverable: 在授权的目标环境核对交付版本、发布或演练结果、监控和恢复证据，向团队反馈后续事项。
+    on_fail: implement

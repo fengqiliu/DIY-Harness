@@ -6,3 +6,9 @@ roles:
   developer: session-default
   reviewer: session-default
   verifier: session-default
+  product-manager: session-default
+  project-manager: session-default
+  ux-designer: session-default
+  pacs-developer: session-default
+  test-engineer: session-default
+  ops-engineer: session-default

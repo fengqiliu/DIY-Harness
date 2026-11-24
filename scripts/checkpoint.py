@@ -47,6 +47,20 @@ def print_brief(plan, history, index):
         print(f"\n--- {name} ---\n{content}")
 
 
+def record_checkpoint(db, plan, history, index, stage, outcome, summary, evidence):
+    """Append one outcome inside the caller's write transaction."""
+    summary = nonempty(summary, "结论 --summary")
+    evidence = text_list(evidence, "证据 --evidence")
+    index = advance(plan["stages"], index, stage, outcome)
+    event = {"seq": len(history) + 1, "stage": stage, "outcome": outcome,
+             "summary": summary, "evidence": evidence, "recorded": now()}
+    db.execute("""INSERT INTO events (seq, stage, outcome, summary, evidence, recorded)
+                  VALUES (:seq, :stage, :outcome, :summary, :evidence, :recorded)""",
+               {**event, "evidence": json.dumps(evidence, ensure_ascii=False)})
+    history.append(event)
+    return index
+
+
 def main():
     parser = argparse.ArgumentParser(description="查看阶段、恢复上下文或登记一次实际工作结果")
     parser.add_argument("run_id")
@@ -66,8 +80,6 @@ def main():
             parser.error("查看详情与登记结果请分别执行")
         if not args.stage or not args.outcome:
             parser.error("登记结果需要 --stage 和 --outcome")
-        summary = nonempty(args.summary, "结论 --summary")
-        evidence = text_list(args.evidence, "证据 --evidence")
 
     with closing(open_run(args.run_id, write=write)) as db, db:
         if write:
@@ -76,13 +88,8 @@ def main():
         if write:
             if args.revision is not None and args.revision != len(history):
                 raise ValueError(f"修订已变化，当前为 {len(history)}，请先查看最新交接")
-            index = advance(plan["stages"], index, args.stage, args.outcome)
-            event = {"seq": len(history) + 1, "stage": args.stage, "outcome": args.outcome,
-                     "summary": summary, "evidence": evidence, "recorded": now()}
-            db.execute("""INSERT INTO events (seq, stage, outcome, summary, evidence, recorded)
-                          VALUES (:seq, :stage, :outcome, :summary, :evidence, :recorded)""",
-                       {**event, "evidence": json.dumps(evidence, ensure_ascii=False)})
-            history.append(event)
+            index = record_checkpoint(db, plan, history, index, args.stage,
+                                      args.outcome, args.summary, args.evidence)
     print_status(plan, history, index)
     if args.history:
         for event in history:

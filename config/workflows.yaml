@@ -1,3 +1,4 @@
 # 左侧为 bootstrap.py 接受的流程名；右侧相对于项目根目录。
 feature: workflows/feature.yaml
 bugfix: workflows/bugfix.yaml
+pacs-delivery: workflows/pacs-delivery.yaml
