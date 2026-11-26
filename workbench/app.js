@@ -19,6 +19,9 @@
   const paths = {overview:"M3 3h7v7H3z M14 3h7v7h-7z M3 14h7v7H3z M14 14h7v7h-7z",board:"M3 4h18v16H3z M9 4v16 M15 4v16",map:"M9 3h6v5H9z M3 16h6v5H3z M15 16h6v5h-6z M12 8v4 M6 16v-4h12v4",goal:"M12 21a9 9 0 1 1 .1 0 M12 17a5 5 0 1 1 .1 0 M12 12l7-7",calendar:"M3 6h18v15H3z M3 11h18 M7 3v5 M17 3v5",pen:"M4 20l5-1L21 7l-4-4L5 15z M14 6l4 4",code:"M8 6l-6 6 6 6 M16 6l6 6-6 6 M14 3l-4 18",check:"M12 2l8 4v6q0 6-8 10-8-4-8-10V6z M8 12l3 3 5-6",pulse:"M2 12h5l3-8 4 16 3-8h5",plus:"M12 5v14 M5 12h14",arrow:"M5 12h14 M14 7l5 5-5 5",layers:"M2 8l10-5 10 5-10 5z M2 12l10 5 10-5 M2 16l10 5 10-5"};
   const icon=(key)=>`<svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="${paths[key]}"/></svg>`;
   const esc=(v)=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+  // 轻量 Markdown 渲染：单遍扫描，先 esc 转义再替换，避免属性与内联标记互相干扰
+  const md=(v)=>esc(v).replace(/`([^`]+)`|\*\*([^*]+)\*\*|\[([^\]]+)\]\((https?:\/\/[^\s)<]+)\)/g,(_,code,bold,text,url)=>
+    code!==undefined?`<code>${code}</code>`:bold!==undefined?`<strong>${bold}</strong>`:`<a href="${url}" target="_blank" rel="noopener noreferrer">${text}</a>`);
   const $=s=>document.querySelector(s);
   const state={items:[],view:"overview",role:"",sprint:"",domain:"",query:"",detail:null};
   const names={overview:"工作总览",board:"迭代看板",map:"领域地图",role:"角色工作台"};
@@ -111,16 +114,30 @@
       <div class="pair"><label>迭代<input name="sprint" value="${esc(state.sprint||"待规划")}" maxlength="80" required></label><label>优先级<select name="priority">${priorities("P2")}</select></label></div><button class="primary">创建工作项</button></form>`);
   }
   const outcomes={pass:"通过并交接",blocked:"登记阻塞",fail:"登记失败并返工"};
+  // 阶段进度条：在详情弹层顶部直观显示当前六步进度与阻塞状态
+  function stagePipeline(currentStage, completed, blocked) {
+    const stageIndex = completed ? roles.length : roles.findIndex(r => r[0] === currentStage);
+    return `<div class="stage-pipeline" role="list" aria-label="阶段进度">${roles.map((r, i) => {
+      const done = completed || i < stageIndex;
+      const active = !completed && i === stageIndex;
+      const cls = done ? "sp-done" : active ? (blocked ? "sp-active sp-blocked" : "sp-active") : "";
+      const tip = done ? "（已完成）" : active ? (blocked ? "（已阻塞）" : "（进行中）") : "";
+      return `<div class="sp-step ${cls}" role="listitem" aria-label="${r[3]}${tip}">
+        <span class="sp-dot">${done?icon("check"):icon(r[5])}</span><small>${r[3]}</small></div>`;
+    }).join('<i class="sp-line"></i>')}</div>`;
+  }
   function detail(i){
     state.detail=i;
     const fields=handoffs[i.stage]||["结论","实际结果或阻塞原因","证据位置或观察值"];
-    show(`<div class="over">${esc(i.domain)} · ${esc(i.priority)} · ${esc(i.id)}</div><h2>${esc(i.title)}</h2><p class="dim">${esc(i.sprint)}　/　${esc(stageName(i.stage))}${i.blocked?"　·　已阻塞":""}</p>
+    show(`<div class="over">${esc(i.domain)} · ${esc(i.priority)} · ${esc(i.id)}</div><h2>${esc(i.title)}</h2>
+      ${stagePipeline(i.stage, i.completed, i.blocked)}
+      <p class="dim">${esc(i.sprint)}　/　${esc(stageName(i.stage))}${i.blocked?"　·　已阻塞":""}</p>
       ${!i.completed?`<section class="brief"><b>本阶段交付要求</b><p>${esc(i.deliverable)}</p><details><summary>角色与执行指引</summary><pre>${esc(i.role_text)}\n\n${esc(i.skill_text)}</pre></details></section>
       <form id="checkpoint-form"><h3>阶段交接</h3><label>结果<select name="outcome">${Object.entries(outcomes).map(([v,n])=>option(v,"pass",n)).join("")}</select></label>
       <label>${fields[0]}<textarea name="summary" required rows="2" placeholder="${fields[1]}"></textarea></label>
       <label>证据（每行一项）<textarea name="evidence" required rows="2" placeholder="${fields[2]}"></textarea></label><button class="primary">保存交接</button></form>
       <details><summary>调整迭代与优先级</summary><form id="plan-form"><div class="pair"><label>迭代<input required name="sprint" value="${esc(i.sprint)}"></label><label>优先级<select name="priority">${priorities(i.priority)}</select></label></div><button class="secondary">保存排期</button></form></details>`:""}
-      <section><h3>交付记录 · ${i.history.length}</h3>${[...i.history].reverse().map(h=>`<article class="event"><b>${stageName(h.stage)} · ${esc(outcomes[h.outcome])}</b><small>${esc(new Date(h.recorded).toLocaleString("zh-CN",{hour12:false}))}</small><p>${esc(h.summary)}</p><ul>${h.evidence.map(e=>`<li>${esc(e)}</li>`).join("")}</ul></article>`).join("")||empty("尚未登记阶段结果。")}</section>`);
+      <section><h3>交付记录 · ${i.history.length}</h3>${[...i.history].reverse().map(h=>`<article class="event"><b>${stageName(h.stage)} · ${esc(outcomes[h.outcome])}</b><small>${esc(new Date(h.recorded).toLocaleString("zh-CN",{hour12:false}))}</small><p>${esc(h.summary)}</p><ul>${h.evidence.map(e=>`<li>${md(e)}</li>`).join("")}</ul></article>`).join("")||empty("尚未登记阶段结果。")}</section>`);
   }
   const itemUrl=id=>"/api/items/"+encodeURIComponent(id);
   document.addEventListener("click",async e=>{
