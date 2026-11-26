@@ -1,5 +1,7 @@
 # DIY Personal Harness
 
+[![CI](https://github.com/fengqiliu/DIY-Harness/actions/workflows/ci.yml/badge.svg)](https://github.com/fengqiliu/DIY-Harness/actions/workflows/ci.yml)
+
 这是一套给个人开发者使用的本地工作流程。你可以在 Codex、Claude 或终端中开始一项任务，让同一个人或助手先后承担规划、实现、评审和验证。每次交接都带上结论和证据；切换会话后，用任务 ID 即可找回目标、当前阶段和历史记录。
 
 ## PACS 六角色研发工作台
